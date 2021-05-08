@@ -1,7 +1,7 @@
 #include "VertexArray.h"
 #include "glad/glad.h"
 
-VertexArray::VertexArray(const unsigned int count)
+VertexArray::VertexArray()
 {
 	glGenVertexArrays(1, &m_RendererID);
 	glBindVertexArray(m_RendererID);

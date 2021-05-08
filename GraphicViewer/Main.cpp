@@ -6,7 +6,13 @@
 #include "IndexBuffer.h"
 #include "VertexArray.h"
 #include "Texture.h"
-#include "Libraries/include/stb_image/stb_image.h"
+#include "stb_image/stb_image.h"
+#include "glm/gtc/matrix_transform.hpp"
+#include "glm/gtc/type_ptr.hpp"
+#include "Camera.h"
+
+const int width = 800;
+const int height = 800;
 
 int main()
 {
@@ -18,7 +24,7 @@ int main()
 	// Tell GLFW we are using CORE profile
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	// Create a GLFWWindow object of 800x800 pixels
-	GLFWwindow* window = glfwCreateWindow(800,800,"Graphic Viewer",NULL,NULL);
+	GLFWwindow* window = glfwCreateWindow(width, height,"Graphic Viewer",NULL,NULL);
 	if (window == NULL)
 	{
 		glfwTerminate();
@@ -29,7 +35,7 @@ int main()
 	// Load GLAD so it configures OpenGL
 	gladLoadGL();
 	// Specify the viewpoint of OpenGL in the Window. 
-	glViewport(0,0,800,800);
+	glViewport(0,0,width,height);
 	// Specify the color of the background
 	glClearColor(0.07f,0.13f,0.17f,1.0f);
 	// Clean the back buffer and assign the new color to it
@@ -37,46 +43,25 @@ int main()
 	// Swap the back buffer with the front buffer
 	glfwSwapBuffers(window);
 
-	// Specifying the vertex positions
-	/*
-	float vertices[] =
-	{
-		-0.5f   , -0.5f * float(sqrt(3)) /     3,  0.8f, 0.3f,  0.02f,
-		 0.5f   , -0.5f * float(sqrt(3)) /     3, 0.8f, 0.3f,  0.02f,
-		 0.0f   ,  0.5f * float(sqrt(3)) * 2 / 3, 0.8f, 0.3f,  0.02f,
-
-		-0.5 / 2,  0.5f * float(sqrt(3)) / 6    , 0.9f, 0.45f, 0.17f,
-		 0.5 / 2,  0.5f * float(sqrt(3)) / 6    , 0.9f, 0.45f, 0.17f,
-		 0.0 / 2, -0.5f * float(sqrt(3)) / 3    , 0.9f, 0.45f, 0.17f,
-
-		 -1.0f  ,                         0.0f  , 0.9f, 0.45f, 0.17f,
-		 -0.5f  ,                         1.0f  , 0.8f, 0.3f,  0.02f,
-		  0.0f  ,                         0.0f  , 0.8f, 0.3f,  0.02f,
-		  0.5f  ,                        -1.0f  , 0.8f, 0.3f,  0.02f,
-		  1.0f  ,                         0.0f  , 0.8f, 0.3f,  0.02f,
-	};
-	unsigned int indices[] = {
-		6,7,8,
-		8,9,10,
-		0,3,5,
-		3,2,4,
-		5,4,1
-	};
-	*/
 	// Vertices coordinates
 	float vertices[] =
 	{ //     COORDINATES     /        COLORS      /   TexCoord  //
-		-0.5f, -0.5f, 0.0f,     1.0f, 0.0f, 0.0f,	0.0f, 0.0f, // Lower left corner
-		-0.5f,  0.5f, 0.0f,     0.0f, 1.0f, 0.0f,	0.0f, 1.0f, // Upper left corner
-		 0.5f,  0.5f, 0.0f,     0.0f, 0.0f, 1.0f,	1.0f, 1.0f, // Upper right corner
-		 0.5f, -0.5f, 0.0f,     1.0f, 1.0f, 1.0f,	1.0f, 0.0f  // Lower right corner
+		-0.5f, 0.0f,  0.5f,     0.83f, 0.70f, 0.44f,	0.0f, 0.0f,
+		-0.5f, 0.0f, -0.5f,     0.83f, 0.70f, 0.44f,	5.0f, 0.0f,
+		 0.5f, 0.0f, -0.5f,     0.83f, 0.70f, 0.44f,	0.0f, 0.0f,
+		 0.5f, 0.0f,  0.5f,     0.83f, 0.70f, 0.44f,	5.0f, 0.0f,
+		 0.0f, 0.8f,  0.0f,     0.92f, 0.86f, 0.76f,	2.5f, 5.0f
 	};
 
 	// Indices for vertices order
 	unsigned int indices[] =
 	{
-		0, 2, 1, // Upper triangle
-		0, 3, 2 // Lower triangle
+		0, 1, 2,
+		0, 2, 3,
+		0, 1, 4,
+		1, 2, 4,
+		2, 3, 4,
+		3, 0, 4
 	};
 
 	// Pipeline Starts Here (Shaders)
@@ -85,7 +70,7 @@ int main()
 	// Vertex Buffer
 	VertexBuffer vb(vertices, sizeof(vertices));
 	// Vertex Array Object
-	VertexArray vao(3); //x,y,z, color coordinate per vertex location attrib and color attrib
+	VertexArray vao; 
 	//Index Buffer 
 	IndexBuffer ib(indices,sizeof(indices));
 
@@ -97,22 +82,31 @@ int main()
 	vao.Unbind();
 
 	// Adding textures
-	Texture texture("resources/textures/Untitled.png");
+	Texture texture("resources/textures/brick.png");
 
 	glfwSwapInterval(1); //Sync with monitors refresh rate
+	glEnable(GL_DEPTH_TEST);
+
+	Camera camera(glm::vec3(0.0f,0.0f,2.0f), width, height);
+
 	// Main while loop
 	while (!glfwWindowShouldClose(window)) 
 	{
 		glClearColor(0.07f, 0.13f, 0.17f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
 
 		shader.Bind();
+
+		camera.Inputs(window);
+		camera.Matrix(45.0f,0.1f,100.0f,shader,"camMatrix");
+		
 		// Setting up uniforms
 		shader.setUniform1f("scale", 0.5f);
 		shader.setUniform1i("tex0", 0);
 		texture.Bind();
 		vao.Bind();
-		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); // DrawCall
+		glDrawElements(GL_TRIANGLES, sizeof(indices)/sizeof(int), GL_UNSIGNED_INT, 0); // DrawCall
 
 		glfwSwapBuffers(window);
 		// Take care of all GLFW events
@@ -128,4 +122,4 @@ int main()
 }
 
 
-// https://www.youtube.com/watch?v=45MIykWJ-C4&list=WL&index=35 46:35
+// https://www.youtube.com/watch?v=45MIykWJ-C4&list=WL&index=35 1:10:07

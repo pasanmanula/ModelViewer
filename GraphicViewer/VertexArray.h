@@ -6,7 +6,7 @@ class VertexArray {
 private:
 	unsigned int m_RendererID;
 public:
-	VertexArray(const unsigned int count);
+	VertexArray();
 	~VertexArray();
 
 	void Bind() const;

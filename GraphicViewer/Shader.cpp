@@ -1,5 +1,6 @@
 #include "Shader.h"
 
+
 Shader::Shader(const std::string& filepath)
 	: m_filePath(filepath),m_RendererID(0)
 {
@@ -19,6 +20,11 @@ void Shader::Bind() const
 void Shader::Unbind() const
 {
 	glUseProgram(0);
+}
+
+unsigned int Shader::getID() const
+{
+    return m_RendererID;
 }
 
 unsigned int Shader::CompileShader(unsigned int type, const std::string& source)
@@ -92,6 +98,11 @@ ShaderProgramSource Shader::ParseShader(const std::string& filepath)
 }
 
 
+unsigned int Shader::GetUniformLocation(const std::string& name)
+{
+    unsigned int uniID = glGetUniformLocation(m_RendererID, name.c_str());
+    return uniID;
+}
 
 void Shader::setUniform1i(const std::string& name, unsigned int value) {
     glUniform1f(GetUniformLocation(name), value);
@@ -101,8 +112,6 @@ void Shader::setUniform1f(const std::string& name, float value) {
     glUniform1f(GetUniformLocation(name), value);
 }
 
-unsigned int Shader::GetUniformLocation(const std::string& name)
-{
-    unsigned int uniID = glGetUniformLocation(m_RendererID, name.c_str());
-    return uniID;
+void Shader::setUniform4m(const std::string& name, const glm::mat4& matrix) {
+    glUniformMatrix4fv(GetUniformLocation(name), 1, GL_FALSE, glm::value_ptr(matrix));
 }
